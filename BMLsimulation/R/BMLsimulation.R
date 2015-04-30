@@ -3,9 +3,7 @@
 #### use some packages #######
 library(grid)
 library(ggplot2)
-#library(parallel)
-#library(doParallel)
-#library(foreach)
+
 
 
 ########### define global variables to represent colors ###########
