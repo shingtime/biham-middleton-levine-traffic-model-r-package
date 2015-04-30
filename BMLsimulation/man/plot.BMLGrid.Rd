@@ -8,7 +8,7 @@ Plot the BML model grid
 This function uses S3 method to plot a BML grid
 }
 \usage{
-plot.BMLGrid = function(x,...)
+plot.BMLGrid(x,...)
 }
 \arguments{
   \item{x}{an BML grid with S3 class}

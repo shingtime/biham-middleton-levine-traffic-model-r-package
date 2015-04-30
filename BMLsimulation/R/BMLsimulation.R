@@ -1,28 +1,20 @@
 ################# STA 242 HW2 final version ##################
-#set.seed(1001)
-#### use some packages #######
-library(grid)
-library(ggplot2)
 
 
-
-########### define global variables to represent colors ###########
-white = 0
-red = 1
-blue = -1
+#####Note: In the source file, all the 0 mean white color on the grid. All the 1 
+#### represent red cars. All the -1 represent blue cars. These three constant are using
+### to represent color.
 
 ###########  function to create initial grid  ############
-
 createBMLGrid =function(r,c, ncars){  
-  stopifnot(!is.na(ncars["red"]))
-  stopifnot(!is.na(ncars["blue"]))
   ## check if the cars' numbers are reasonable
   if (sum(ncars)/(r*c) > 1) return ("There are too many cars.")
   else{
     ## generate the empty grid
-    grid = matrix(white, r, c)
+    grid = matrix(0, r, c)
     pos = sample(1:length(grid), sum(ncars))
-    grid[pos] = sample(rep(c(blue, red), ceiling(ncars)))[seq(along = pos)]
+    ## -1:blue;  1: red
+    grid[pos] = sample(rep(c(-1, 1), ceiling(ncars)))[seq(along = pos)]
   }
   ## s3 method to define grid's class
   class(grid) = c("BMLGrid", "matrix")
@@ -33,7 +25,7 @@ createBMLGrid =function(r,c, ncars){
 ## In this algorithms, all the cars will move simultaneouly
 .car_coordinate = function(matrix){
   ## check cars' location
-  index = which(matrix!=white)
+  index = which(matrix!=0)
   ## row number with cars
   row_indice = row(matrix)[index]
   ## column number with cars
@@ -57,7 +49,7 @@ createBMLGrid =function(r,c, ncars){
   colnames(current_location) = c("row_indice","col_indice")
   ## duplicate the current location matrix and use it to compute the next location
   possible_next_location = current_location  
-  if(color==red){  
+  if(color==1){  
     ## add one to all red cars' column indices-- move to the right
     possible_next_location[,"col_indice"] = possible_next_location[,"col_indice"] + 1
     ## check if the red cars move to the right border of the grid, if yes, change row indices to one
@@ -79,9 +71,9 @@ createBMLGrid =function(r,c, ncars){
   ## use all the new indices for the cars to subset the original grid
   new_indice = matrix[possible_next_location]
   ## check if the new positions are blank. If yes, change those blanks to the corresponding colors
-  matrix[possible_next_location[which(new_indice == white),,drop=FALSE ]] = color
+  matrix[possible_next_location[which(new_indice == 0),,drop=FALSE ]] = color
   ## change those cars' current locations' colors to blank
-  matrix[current_location[which(new_indice == white),,drop=FALSE ]] = white
+  matrix[current_location[which(new_indice == 0),,drop=FALSE ]] = 0
   matrix
 }
 
@@ -90,17 +82,19 @@ createBMLGrid =function(r,c, ncars){
 rumBMLGrid= function(numSteps,grid){
   # Register cluster
   for(i in 1:numSteps){
-    grid = .move_cars(grid,blue)
-    grid = .move_cars(grid,red)    
+    ##move blue car
+    grid = .move_cars(grid,-1)
+    ## move red car
+    grid = .move_cars(grid,1)    
   }
   grid
 }
 
 
 ######## plot function: S3 method ###########
-plot.BMLGrid = function(initial_grid,...){
-  image_grid = matrix(match(initial_grid, c(white, red, blue)),
-                      nrow(initial_grid), ncol(initial_grid))
+plot.BMLGrid = function(x,...){
+  image_grid = matrix(match(x, c(0, 1, -1)),
+                      nrow(x), ncol(x))
   ## the row number should be opposite
   image_grid = image_grid[c(nrow(image_grid):1),]
   ## get the correct order
@@ -116,11 +110,11 @@ plot.BMLGrid = function(initial_grid,...){
 #### 2. how many cars are blocked
 #### 3. average velocity
 
-summary.BMLGrid = function(grid,...){
-  car_info_blue = .car_coordinate(grid)
-  output_blue = .blue_summary(grid,car_info_blue)
+summary.BMLGrid = function(object,...){
+  car_info_blue = .car_coordinate(object)
+  output_blue = .blue_summary(object,car_info_blue)
   ### red cars
-  grid_red = .move_cars(grid,blue)
+  grid_red = .move_cars(object,-1)
   car_info_red = .car_coordinate(grid_red)
   output_red = .red_summary(grid_red,car_info_red)
   output = c(output_blue,output_red)
@@ -130,7 +124,7 @@ summary.BMLGrid = function(grid,...){
 }
 ######### function to summary blue car
 .blue_summary = function(grid,car_info){
-  indice = which(car_info$colors == blue)
+  indice = which(car_info$colors == -1)
   num_car = length(indice)
   current_row = car_info$row_indice[indice]
   current_col = car_info$col_indice[indice]
@@ -138,7 +132,7 @@ summary.BMLGrid = function(grid,...){
   next_row = current_row - 1
   next_row[ next_row < 1 ]  = nrow(grid)
   new_possible_position = cbind(next_row,next_col)
-  move = sum(grid[new_possible_position] == white)
+  move = sum(grid[new_possible_position] == 0)
   block = num_car - move 
   velocity = move/num_car
   output = c(num_car,move,block,velocity)
@@ -146,7 +140,7 @@ summary.BMLGrid = function(grid,...){
 }
 ######## function to summary red car
 .red_summary = function(grid,car_info){
-  indice = which(car_info$colors == red)
+  indice = which(car_info$colors == 1)
   num_car = length(indice)
   current_row = car_info$row_indice[indice]
   current_col = car_info$col_indice[indice]
@@ -154,7 +148,7 @@ summary.BMLGrid = function(grid,...){
   next_col = current_col + 1
   next_col[ next_col > ncol(grid) ]  = 1
   new_possible_position = cbind(next_row,next_col)
-  move = sum(grid[new_possible_position] == white)
+  move = sum(grid[new_possible_position] == 0)
   block = num_car - move 
   velocity = move/num_car
   output = c(num_car,move,block,velocity)
@@ -194,8 +188,8 @@ velocity_density = function(r,c,density,numSteps){
 
 .move_cars1 = function(matrix){
   car_info = car_coordinate(matrix)
-  red_indice = which(car_info$colors==red)
-  blue_indice = which(car_info$colors==blue)
+  red_indice = which(car_info$colors==1)
+  blue_indice = which(car_info$colors==-1)
   ## red cars: move to the right
   ## check if we can move the red cars
   for (i in red_indice){
@@ -205,9 +199,9 @@ velocity_density = function(r,c,density,numSteps){
     if(current_col==ncol(matrix)) next_col = 1
     else next_col = current_col +1
     ## change the position 
-    if(matrix[next_row,next_col] ==white){
-      matrix[next_row,next_col]=red
-      matrix[current_row,current_col]=white
+    if(matrix[next_row,next_col] ==0){
+      matrix[next_row,next_col]=1
+      matrix[current_row,current_col]=0
     }
   }
   ## blue cars:move upwards
@@ -218,9 +212,9 @@ velocity_density = function(r,c,density,numSteps){
     if(current_row==1) next_row = nrow(matrix)
     else next_row = current_row - 1
     ## change the position
-    if(matrix[next_row,next_col]==white){
-      matrix[next_row,next_col]=blue
-      matrix[current_row,current_col]=white     
+    if(matrix[next_row,next_col]==0){
+      matrix[next_row,next_col]=-1
+      matrix[current_row,current_col]=0    
     }
   }
   matrix

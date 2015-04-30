@@ -8,11 +8,11 @@ summary the current state of a given BML grid
 This summary function gives the total numbers of cars, numbers of moving cars,numbers of blocked cars and average velocity for each color's car.
 }
 \usage{
-summary.BMLGrid = function(x,...)
+summary.BMLGrid(object,...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{a BML grid with S3 class}
+  \item{object}{a BML grid with S3 class}
   \item{...}{additional arguments affecting the summary produced.}
 }
 \details{

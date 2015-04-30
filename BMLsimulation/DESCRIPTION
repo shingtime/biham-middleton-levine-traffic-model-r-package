@@ -7,4 +7,4 @@ Author: Junxiao Bu
 Maintainer: Junxiao Bu <jxbu@ucdavis.edu>
 Description: This package provides R methods to simulate the Biham-Middleton-Levine traffic model.
 License: BSD
-Imports: ggplot2,parallel,doParallel,foreach
+Imports: ggplot2

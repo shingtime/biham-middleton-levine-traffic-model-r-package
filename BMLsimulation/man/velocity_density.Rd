@@ -9,7 +9,7 @@ This function returns the result the total average velocity of a BML grid when p
 different density.
 }
 \usage{
-velocity_density = function(r,c,density,numSteps)
+velocity_density(r,c,density,numSteps)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
