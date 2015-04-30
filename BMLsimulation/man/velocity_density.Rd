@@ -46,7 +46,7 @@ Junxiao Bu
 }
 \examples{
 density = seq(from=0.2,to=0.7,length.out=50)
-velocity_density(r=100,c=100,density,numSteps=100)
+velocity_density(r=100,c=100,density,numSteps=10)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

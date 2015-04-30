@@ -3,9 +3,9 @@
 #### use some packages #######
 library(grid)
 library(ggplot2)
-library(parallel)
-library(doParallel)
-library(foreach)
+#library(parallel)
+#library(doParallel)
+#library(foreach)
 
 
 ########### define global variables to represent colors ###########
@@ -15,7 +15,9 @@ blue = -1
 
 ###########  function to create initial grid  ############
 
-createBMLGrid =function(r,c, ncars){
+createBMLGrid =function(r,c, ncars){  
+  stopifnot(!is.na(ncars["red"]))
+  stopifnot(!is.na(ncars["blue"]))
   ## check if the cars' numbers are reasonable
   if (sum(ncars)/(r*c) > 1) return ("There are too many cars.")
   else{
@@ -89,14 +91,11 @@ createBMLGrid =function(r,c, ncars){
 ## need to export all global functions and global variables
 rumBMLGrid= function(numSteps,grid){
   # Register cluster
-  cl = makeCluster(detectCores()-1)
-  registerDoParallel(cl)
-  result = foreach(i=1:numSteps,.export=c(".move_cars",".car_coordinate",".change_color","red","white","blue")) %dopar%{
+  for(i in 1:numSteps){
     grid = .move_cars(grid,blue)
-    grid = .move_cars(grid,red)
-  } 
-  result[[numSteps]]
-  #stopCluster(cl)
+    grid = .move_cars(grid,red)    
+  }
+  grid
 }
 
 

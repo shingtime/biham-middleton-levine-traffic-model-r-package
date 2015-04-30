@@ -39,5 +39,5 @@ plot(g)
 #Summarize the output
 summary(g)
 ## average velocity of 10*10 grid with density 0.3
-velocity_density(10,10,0.3,100)
+velocity_density(10,10,0.3,10)
 }

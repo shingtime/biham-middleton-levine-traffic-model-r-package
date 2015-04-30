@@ -6,10 +6,6 @@
 #### use some packages #######
 library(grid)
 library(ggplot2)
-library(parallel)
-library(doParallel)
-library(foreach)
-
 
 ########### define global variables to represent colors ###########
 white = 0
@@ -18,7 +14,9 @@ blue = -1
 
 ###########  function to create initial grid  ############
 
-createBMLGrid =function(r,c, ncars){
+createBMLGrid =function(r,c, ncars){  
+  stopifnot(!is.na(ncars["red"]))
+  stopifnot(!is.na(ncars["blue"]))
   ## check if the cars' numbers are reasonable
   if (sum(ncars)/(r*c) > 1) return ("There are too many cars.")
   else{
@@ -92,14 +90,11 @@ createBMLGrid =function(r,c, ncars){
 ## need to export all global functions and global variables
 rumBMLGrid= function(numSteps,grid){
   # Register cluster
-  cl = makeCluster(detectCores()-1)
-  registerDoParallel(cl)
-  result = foreach(i=1:numSteps,.export=c(".move_cars",".car_coordinate",".change_color","red","white","blue")) %dopar%{
+  for(i in 1:numSteps){
     grid = .move_cars(grid,blue)
-    grid = .move_cars(grid,red)
-  } 
-  result[[numSteps]]
-  #stopCluster(cl)
+    grid = .move_cars(grid,red)    
+  }
+  grid
 }
 
 
@@ -244,46 +239,8 @@ velocity_density = function(r,c,density,numSteps){
 
 ############### Appendix2 : R codes to generate plots in the report
 
-########     figure 1 & 2     ################
 
-plotBlueBMLGrid = function(Matrix) {
-  flippedMatrix = Matrix[nrow(Matrix):1, ]
-  image.default(t(flippedMatrix), col = c("white", "blue"), axes = F)
-  box()
-}
-plotRedBMLGrid = function(Matrix) {
-  flippedMatrix = Matrix[nrow(Matrix):1, ]
-  image.default(t(flippedMatrix), col = c("red", "white"), axes = F)
-  box()
-}
-## inital grid
-a = matrix(c(1, 0, 0, 0, 0, 0, 0, 0, 0), nrow = 3)
-b = matrix(c(0, 0, 1, 0, 0, 0, 0, 0, 0), nrow = 3)
-c = matrix(c(0, 0, 0, 0, 0, 0, -1, 0, 0), nrow = 3)
-d = matrix(c(-1, 0, 0, 0, 0, 0, 0, 0, 0), nrow = 3)
-e = matrix(c(0,1,0,0,-1,0,0,0,0),nrow = 3)
-f = matrix(c(0,0,0,1,-1,0,0,0,0),nrow = 3)
-class(a) = c("BMLGrid","Matrix")
-plotBlueBMLGrid(a)
-title("Blue : before")
-plotBlueBMLGrid(b)
-title("Blue : after")
-plotRedBMLGrid(c)
-title("Red : before")
-plotRedBMLGrid(d)
-title("Red : after")
-
-########     figure 3 & 4     ################
-
-par(mfrow=c(2,4),mar=c(1,1,1,1),pty="s")
-g = createBMLGrid(4,4,c(4,4))
-plot(g,main = "inital plot of 4*4")
-g = move_cars(g,blue)
-plot(g,main="blue:step ")
-g = move_cars(g,red)
-plot(g,main="red:step ")
-
-##########   figure 5 & 6  ##########
+##########   figure 1   ##########
 ### density from 0.2 to 0.7 & 0.31,0.32,0.39,0.4
 g = createBMLGrid(256,256,c(256*256*0.2/2,256*256*0.2/2)) 
 x = rumBMLGrid(5000,x)
@@ -291,7 +248,7 @@ plot(x)
 
 #######
 
-########   figure 7   #############
+########   figure 2   #############
 
 par(mfrow = c(2,3),mar=c(1,1,1,1),pty = "s")
 
@@ -308,7 +265,7 @@ plot(x1,main="iteration:5500")
 
 ##########
 
-##########  figure 8 #########
+##########  figure 3 #########
 par(mfrow = c(2,3),mar=c(1,1,1,1),pty = "s")
 #### density from 0.3 to 0.5
 #### red:blue = 7:3
@@ -322,27 +279,12 @@ plot(x)
 
 ###########
 
-#########   figure 9 & 10 ##########
-
-library(ggplot2)
-library(gridExtra)
+#########   figure 4 & 5 ##########
 density = seq(from=0.2,to=0.7,length.out=50)
 ### iteration time: 5000 or 1000
 velocity_64 = velocity_density(64,64,density,1000)
 velocity_128 = velocity_density(128,128,density,1000)
 velocity_256 = velocity_density(256,256,density,1000)
-p64 =  ggplot() + geom_jitter(data=velocity_64,aes(x=density,y=velocity))+ggtitle("64*64Grid")+
-  ylab("Average velocity(move cars / total cars)")
-
-p128 = ggplot() + geom_jitter(data=velocity_128,aes(x=density,y=velocity))+ggtitle("128*128Grid")+
-  ylab("Average velocity(move cars / total cars)")
-
-p256 = ggplot() + geom_jitter(data=velocity_256,aes(x=density,y=velocity))+ggtitle("256*256Grid")+
-  ylab("Average velocity(move cars / total cars)")
-
-grid.arrange(p64,p128,p256,ncol=3,main="average velocity vs. density")
-
-######## figure 11 & 12 #########
 
 plot(velocity_64[,2],velocity_64[,1],col=652,pch=20,title("Different grid size vs.density"),
      xlab="Density",ylab="Average velocity(move cars / total cars)")
@@ -373,6 +315,77 @@ Rprof(NULL)
 head(summaryRprof("/tmp/slow_BML.prof")$by.self, 5)
 time_slow = system.time(rumBMLGrid1(g,100))
 
+######## performance with different grid size
 
+
+### grid size with user's time
+#### suppose the density is 0.2 ,0.35 0.7 
+#### run 100 hundered times
+N = 2^(3:10)
+timings =
+  sapply(N,
+         function(n) {
+           print(n)
+           g = createBMLGrid(n,n,c(n^2*0.2/2,n^2*0.2/2))
+           system.time(rumBMLGrid(100,g))
+         })
+
+timings_0.35 = sapply(N,
+                      function(n) {
+                        print(n)
+                        g = createBMLGrid(n,n,c(n^2*0.35/2,n^2*0.35/2))
+                        system.time(rumBMLGrid(100,g))
+                      })
+
+timings_0.7 = sapply(N,
+                     function(n) {
+                       print(n)
+                       g = createBMLGrid(n,n,c(n^2*0.7/2,n^2*0.7/2))
+                       system.time(rumBMLGrid(100,g))
+                     })
+
+
+plot(N, timings[1,], type = "p",
+     xlab = "Grid size",
+     ylab = "User's Time (seconds)",pch=4,col=24,main="Grid Size vs. User's time")
+lines(N,timings[1,],lty=2)
+points(N,timings_0.35[1,],pch=18,col=58)
+lines(N,timings_0.35[1,],lty=20)
+points(N,timings_0.7[1,],pch=23,col=99)
+lines(N,timings_0.7[1,],lty=14)
+legend("topleft",title="Density",c("0.2","0.35","0.7"),
+       pch=c(4,18,23),col=c(24,58,99),cex=0.75)
+
+######## density with users time
+
+density = seq(from=0.2,to=0.7,length.out=10)
+timing_density_64 =
+  sapply(density,
+         function(n) {
+           g = createBMLGrid(64,64,c(ceiling(64^2*n/2),ceiling(64^2*n/2)))
+           system.time(rumBMLGrid(500,g))
+         })
+
+timing_density_128 =
+  sapply(density,
+         function(n) {
+           g = createBMLGrid(128,128,c(ceiling(128^2*n/2),ceiling(128^2*n/2)))
+           system.time(rumBMLGrid(500,g))
+         })
+
+timing_density_256 =
+  sapply(density,
+         function(n) {
+           g = createBMLGrid(256,256,c(ceiling(256^2*n/2),ceiling(256^2*n/2)))
+           system.time(rumBMLGrid(500,g))
+         })
+
+ggplot() + geom_line(data = time, aes(x = density, y = time[,1]))
+
+
+plot(density, timing_density_256[1,],
+     xlab = "density",
+     ylab = "User's Time (seconds)",pch=4,col=24,main="density vs. User's time")
+lines(density,timing_density_256[1,],lty=2)
 
 
