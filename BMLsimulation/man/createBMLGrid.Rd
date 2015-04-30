@@ -45,6 +45,8 @@ library(BMLsimulation)
 
 g = createBMLGrid (100,100,c(red=2000,blue=2000)) 
 
+}
+
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 
