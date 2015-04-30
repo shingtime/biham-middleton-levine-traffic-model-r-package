@@ -1,0 +1,10 @@
+Package: BMLsimulation
+Type: Package
+Title: An R BML traffic model simulation package
+Version: 0.0-1
+Date: 2015-04-27
+Author: Junxiao Bu
+Maintainer: Junxiao Bu <jxbu@ucdavis.edu>
+Description: This package provides R methods to simulate the Biham-Middleton-Levine traffic model.
+License: BSD
+Imports: ggplot2,parallel,doParallel,foreach

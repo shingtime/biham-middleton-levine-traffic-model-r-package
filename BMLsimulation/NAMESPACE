@@ -1,0 +1,4 @@
+
+exportPattern("^[[:alpha:]]+")
+exportPattern("^[^.]")
+import(ggplot2,parallel,doParallel,foreach)
